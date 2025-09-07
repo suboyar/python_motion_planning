@@ -12,6 +12,35 @@ import numpy as np
 
 from .node import Node
 
+
+class Env(ABC):
+    """
+    Class for building 2-d workspace of robots.
+
+    Parameters:
+        x_range (int): x-axis range of enviroment
+        y_range (int): y-axis range of environmet
+        eps (float): tolerance for float comparison
+
+    Examples:
+        >>> from python_motion_planning.utils import Env
+        >>> env = Env(30, 40)
+    """
+    def __init__(self, x_range: int, y_range: int, eps: float = 1e-6) -> None:
+        # size of environment
+        self.x_range = x_range
+        self.y_range = y_range
+        self.eps = eps
+
+    @property
+    def grid_map(self) -> set:
+        return {(i, j) for i in range(self.x_range) for j in range(self.y_range)}
+
+    @abstractmethod
+    def init(self) -> None:
+        pass
+
+
 class Env3D(ABC):
     """
     Class for building 3-d workspace of robots.
@@ -41,6 +70,49 @@ class Env3D(ABC):
     def init(self) -> None:
         pass
 
+
+class Grid(Env):
+    """
+    Class for discrete 2-d grid map.
+
+    Parameters:
+        x_range (int): x-axis range of enviroment
+        y_range (int): y-axis range of environmet
+    """
+    def __init__(self, x_range: int, y_range: int) -> None:
+        super().__init__(x_range, y_range)
+        # allowed motions
+        self.motions = [Node((-1, 0), None, 1, None), Node((-1, 1),  None, sqrt(2), None),
+                        Node((0, 1),  None, 1, None), Node((1, 1),   None, sqrt(2), None),
+                        Node((1, 0),  None, 1, None), Node((1, -1),  None, sqrt(2), None),
+                        Node((0, -1), None, 1, None), Node((-1, -1), None, sqrt(2), None)]
+        # obstacles
+        self.obstacles = None
+        self.obstacles_tree = None
+        self.init()
+
+    def init(self) -> None:
+        """
+        Initialize grid map.
+        """
+        x, y = self.x_range, self.y_range
+        obstacles = set()
+
+        # boundary of environment
+        for i in range(x):
+            obstacles.add((i, 0))
+            obstacles.add((i, y - 1))
+        for i in range(y):
+            obstacles.add((0, i))
+            obstacles.add((x - 1, i))
+
+        self.update(obstacles)
+
+    def update(self, obstacles):
+        self.obstacles = obstacles
+        self.obstacles_tree = cKDTree(np.array(list(obstacles)))
+
+
 class Grid3D(Env3D):
     """
     Class for discrete 2-d grid map.
@@ -64,8 +136,8 @@ class Grid3D(Env3D):
                     if distance == 1:
                         cost = 1
                     elif distance == 2:
-                        cost = sqrt(2) 
-                    else: 
+                        cost = sqrt(2)
+                    else:
                         cost = sqrt(3)
                     self.motions.append(Node((x,y,z), None, cost, None))
 
@@ -73,7 +145,7 @@ class Grid3D(Env3D):
         self.obstacles = None
         self.obstacles_tree = None
         self.init()
-    
+
     def init(self) -> None:
         """
         Initialize grid map.
@@ -100,35 +172,9 @@ class Grid3D(Env3D):
         self.update(obstacles)
 
     def update(self, obstacles):
-        self.obstacles = obstacles 
+        self.obstacles = obstacles
         self.obstacles_tree = cKDTree(np.array(list(obstacles)))
 
-class Env(ABC):
-    """
-    Class for building 2-d workspace of robots.
-
-    Parameters:
-        x_range (int): x-axis range of enviroment
-        y_range (int): y-axis range of environmet
-        eps (float): tolerance for float comparison
-
-    Examples:
-        >>> from python_motion_planning.utils import Env
-        >>> env = Env(30, 40)
-    """
-    def __init__(self, x_range: int, y_range: int, eps: float = 1e-6) -> None:
-        # size of environment
-        self.x_range = x_range  
-        self.y_range = y_range
-        self.eps = eps
-
-    @property
-    def grid_map(self) -> set:
-        return {(i, j) for i in range(self.x_range) for j in range(self.y_range)}
-
-    @abstractmethod
-    def init(self) -> None:
-        pass
 
 class Map(Env):
     """
