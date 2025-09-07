@@ -10,7 +10,7 @@ from turtle import distance
 from scipy.spatial import cKDTree
 import numpy as np
 
-from .node import Node
+from .node import Node, Node3D
 
 
 class Env(ABC):
