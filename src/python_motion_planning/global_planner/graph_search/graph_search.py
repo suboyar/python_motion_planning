@@ -6,6 +6,7 @@
 """
 import math
 from python_motion_planning.utils import Env, Node, Planner, Grid
+from python_motion_planning.utils.environment.env import Grid3D
 
 
 class GraphSearcher(Planner):
@@ -18,7 +19,7 @@ class GraphSearcher(Planner):
         env (Grid): environment
         heuristic_type (str): heuristic function type
     """
-    def __init__(self, start: tuple, goal: tuple, env: Grid, heuristic_type: str="euclidean") -> None:
+    def __init__(self, start: tuple, goal: tuple, env: Grid3D, heuristic_type: str="euclidean") -> None:
         super().__init__(start, goal, env)
         # heuristic type
         self.heuristic_type = heuristic_type
@@ -39,9 +40,9 @@ class GraphSearcher(Planner):
             h (float): heuristic function value of node
         """
         if self.heuristic_type == "manhattan":
-            return abs(goal.x - node.x) + abs(goal.y - node.y)
+            return abs(goal.x - node.x) + abs(goal.y - node.y) + abs(goal.z - node.z)
         elif self.heuristic_type == "euclidean":
-            return math.hypot(goal.x - node.x, goal.y - node.y)
+            return math.hypot(goal.x - node.x, goal.y - node.y, goal.z - node.z)
 
     def cost(self, node1: Node, node2: Node) -> float:
         """

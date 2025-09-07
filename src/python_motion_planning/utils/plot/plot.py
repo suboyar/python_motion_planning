@@ -7,11 +7,11 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-from ..environment.env import Env, Grid, Map, Node
+from ..environment.env import Env3D, Grid, Map, Node
 
 
 class Plot:
-    def __init__(self, start, goal, env: Env):
+    def __init__(self, start, goal, env: Env3D):
         self.start = Node(start, start, 0, 0)
         self.goal = Node(goal, goal, 0, 0)
         self.env = env

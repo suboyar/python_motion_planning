@@ -6,11 +6,11 @@
 """
 import math
 from abc import abstractmethod, ABC
-from ..environment.env import Env, Node
+from ..environment.env import Env3D, Node
 from ..plot.plot import Plot
 
 class Planner(ABC):
-    def __init__(self, start: tuple, goal: tuple, env: Env) -> None:
+    def __init__(self, start: tuple, goal: tuple, env: Env3D) -> None:
         # plannig start and goal
         self.start = Node(start, start, 0, 0)
         self.goal = Node(goal, goal, 0, 0)
