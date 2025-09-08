@@ -166,3 +166,7 @@ class Node3D(object):
             return self.parent[1]
         else:
             return None
+
+    @property
+    def pz(self) -> float:
+        return self.current[2]
