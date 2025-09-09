@@ -77,29 +77,31 @@ class Env3D(ABC):
 
 class Mountain(Env):
     def __init__(self):
-        self.obstacles = []
-        self.motions = [(-1, 0, 1), (-1, 1, sqrt(2)), (0, 1, 1), (1, 1, sqrt(2)),
-                        (1, 0, 1), (1, -1, sqrt(2)), (0, -1, 1), (-1, -1, sqrt(2))]
-
         # Load terrain data
-        dem = cbook.get_sample_data('jacksboro_fault_dem.npz')
-        z = dem['elevation']
-        nrows, ncols = z.shape
-        x = np.linspace(dem['xmin'], dem['xmax'], ncols)
-        y = np.linspace(dem['ymin'], dem['ymax'], nrows)
-        x, y = np.meshgrid(x, y)
-        region = np.s_[5:50, 5:50]
+        with cbook.get_sample_data('jacksboro_fault_dem.npz') as dem:
+            z = dem['elevation']
+            nrows, ncols = z.shape
+            x = np.linspace(dem['xmin'], dem['xmax'], ncols)
+            y = np.linspace(dem['ymin'], dem['ymax'], nrows)
+            x, y = np.meshgrid(x, y)
+            region = np.s_[5:50, 5:50]
 
-        # Store both coordinate systems
-        self.x_coords = x[region]  # Actual coordinates for plotting
-        self.y_coords = y[region]  # Actual coordinates for plotting
-        self.z = z[region]         # Elevation data
+            # Store both coordinate systems
+            self.x_coords = x[region]  # Actual coordinates for plotting
+            self.y_coords = y[region]  # Actual coordinates for plotting
+            self.z = z[region]         # Elevation data
 
-        # Grid dimensions for pathfinding (indices)
-        self.rows, self.cols = self.z.shape
+            # Grid dimensions for pathfinding (indices)
+            self.rows, self.cols = self.z.shape
 
-        # Initialize parent class with grid dimensions
-        super().__init__(self.cols, self.rows)
+            # Initialize parent class with grid dimensions
+            super().__init__(self.cols, self.rows)
+
+        self.obstacles = []
+        self.motions = [Node((-1, 0), None, 1, 0.0), Node((-1, 1),  None, sqrt(2), 0.0),
+                        Node((0, 1),  None, 1, 0.0), Node((1, 1),   None, sqrt(2), 0.0),
+                        Node((1, 0),  None, 1, 0.0), Node((1, -1),  None, sqrt(2), 0.0),
+                        Node((0, -1), None, 1, 0.0), Node((-1, -1), None, sqrt(2), 0.0)]
 
     def init(self):
         pass
@@ -107,10 +109,10 @@ class Mountain(Env):
     def getNeighbor(self, node):
         """Generate neighbor nodes with terrain-adjusted costs"""
         neighbors = []
-        for dx, dy, base_cost in self.motions:
+        for motion in self.motions:
             # Work with integer indices
-            new_x = int(node.x + dx)
-            new_y = int(node.y + dy)
+            new_x = int(node.x + motion.x)
+            new_y = int(node.y + motion.y)
 
             # Check bounds using array dimensions
             if 0 <= new_x < self.cols and 0 <= new_y < self.rows:
@@ -120,18 +122,15 @@ class Mountain(Env):
 
                 # Add elevation change penalty
                 elevation_diff = abs(new_z - current_z)
-                terrain_cost = base_cost + elevation_diff * 0.1
+                terrain_cost = motion.g + elevation_diff * 0.1
 
-                neighbor = Node((new_x, new_y), node.current,
-                              node.g + terrain_cost, 0)
+                neighbor = Node((new_x, new_y), node.current, node.g + terrain_cost, 0)
                 neighbors.append(neighbor)
 
         return neighbors
 
     def index_to_coords(self, i, j):
-        """Convert array indices to actual coordinates"""
         return self.x_coords[j, i], self.y_coords[j, i], self.z[j, i]
-
 
 class Grid(Env):
     """
