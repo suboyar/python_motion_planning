@@ -25,7 +25,7 @@ class GraphSearcher(Planner):
         # allowed motions
         self.motions = self.env.motions
         # obstacles
-        # self.obstacles = self.env.obstacles
+        self.obstacles = self.env.obstacles
 
     def h(self, node: Node, goal: Node) -> float:
         """
@@ -54,8 +54,8 @@ class GraphSearcher(Planner):
         Returns:
             cost (float): cost of this motion
         """
-        if self.isCollision(node1, node2):
-            return float("inf")
+        # if self.isCollision(node1, node2):
+        #     return float("inf")
         return self.dist(node1, node2)
 
     def isCollision(self, node1: Node, node2: Node) -> bool:

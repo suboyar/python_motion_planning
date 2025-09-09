@@ -75,8 +75,9 @@ class Env3D(ABC):
         pass
 
 
-class Mountain():
+class Mountain(Env):
     def __init__(self):
+        self.obstacles = []
         self.motions = [(-1, 0, 1), (-1, 1, sqrt(2)), (0, 1, 1), (1, 1, sqrt(2)),
                         (1, 0, 1), (1, -1, sqrt(2)), (0, -1, 1), (-1, -1, sqrt(2))]
 
@@ -96,6 +97,12 @@ class Mountain():
 
         # Grid dimensions for pathfinding (indices)
         self.rows, self.cols = self.z.shape
+
+        # Initialize parent class with grid dimensions
+        super().__init__(self.cols, self.rows)
+
+    def init(self):
+        pass
 
     def getNeighbor(self, node):
         """Generate neighbor nodes with terrain-adjusted costs"""

@@ -8,7 +8,7 @@ import heapq
 
 from .graph_search import GraphSearcher
 from .lpa_star import LPAStar, LNode
-from python_motion_planning.utils import Env, Grid
+from python_motion_planning.utils import Env, Grid, Mountain
 
 
 class DStarLite(LPAStar):
@@ -31,7 +31,7 @@ class DStarLite(LPAStar):
     References:
         [1] D* Lite
     """
-    def __init__(self, start: tuple, goal: tuple, env: Grid, heuristic_type: str = "euclidean") -> None:
+    def __init__(self, start: tuple, goal: tuple, env: Mountain, heuristic_type: str = "euclidean") -> None:
         GraphSearcher.__init__(self, start, goal, env, heuristic_type)
         # start and goal
         self.start = LNode(start, float('inf'), float('inf'), None)

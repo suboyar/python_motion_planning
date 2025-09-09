@@ -7,7 +7,7 @@
 import heapq
 
 from .a_star import AStar
-from python_motion_planning.utils import Env, Grid
+from python_motion_planning.utils import Env, Grid, Mountain
 
 
 class Dijkstra(AStar):
@@ -27,7 +27,7 @@ class Dijkstra(AStar):
         >>> planner.plot.animation(path, str(planner), cost, expand)  # animation
         >>> planner.run()       # run both planning and animation
     """
-    def __init__(self, start: tuple, goal: tuple, env: Grid, heuristic_type: str = "euclidean") -> None:
+    def __init__(self, start: tuple, goal: tuple, env: Mountain, heuristic_type: str = "euclidean") -> None:
         super().__init__(start, goal, env, heuristic_type)
     
     def __str__(self) -> str:
@@ -60,7 +60,7 @@ class Dijkstra(AStar):
                 cost, path = self.extractPath(CLOSED)
                 return cost, path, list(CLOSED.values())
 
-            for node_n in self.getNeighbor(node):
+            for node_n in self.env.getNeighbor(node):
              
                 # hit the obstacle
                 if node_n.current in self.obstacles:

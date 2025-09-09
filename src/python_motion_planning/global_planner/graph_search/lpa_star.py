@@ -7,7 +7,7 @@
 import heapq
 
 from .graph_search import GraphSearcher
-from python_motion_planning.utils import Env, Node, Grid
+from python_motion_planning.utils import Env, Node, Grid, Mountain
 
 class LNode(Node):
     """
@@ -199,11 +199,31 @@ class LPAStar(GraphSearcher):
         Returns:
             neighbors (list): neighbors of node
         """
-        neighbors = []
-        for motion in self.motions:
-            n = self.map[(node + motion).current]
-            if n.current not in self.obstacles:
-                neighbors.append(n)
+
+        if isinstance(self.env, Mountain):
+            # Use Mountain's terrain-aware neighbor finding
+            neighbors = []
+            for dx, dy, base_cost in self.env.motions:
+                new_x = int(node.x + dx)
+                new_y = int(node.y + dy)
+
+                if 0 <= new_x < self.env.cols and 0 <= new_y < self.env.rows:
+                    new_z = self.env.z[new_y, new_x]
+                    current_z = self.env.z[int(node.y), int(node.x)]
+                    elevation_diff = abs(new_z - current_z)
+                    terrain_cost = base_cost + elevation_diff * 0.1
+
+                    # Convert to LNode
+                    neighbor_pos = (new_x, new_y)
+                    if neighbor_pos in self.map:
+                        neighbors.append(self.map[neighbor_pos])
+        else:
+            neighbors = []
+            for motion in self.motions:
+                n = self.map[(node + motion).current]
+                if n.current not in self.obstacles:
+                    neighbors.append(n)
+
         return neighbors
 
     def extractPath(self):
