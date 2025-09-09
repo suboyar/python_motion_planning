@@ -6,23 +6,13 @@
 """
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from python_motion_planning.utils import Grid, Map, SearchFactory, Grid3D
+from python_motion_planning.utils import Grid, Map, SearchFactory, Grid3D, Mountain
 
 def graph_search():
     # build environment
     start = (5, 5)
-    goal = (45, 25)
-    env = Grid(51, 31)
-    obstacles = env.obstacles
-    for i in range(10, 21):
-        obstacles.add((i, 15))
-    for i in range(15):
-        obstacles.add((20, i))
-    for i in range(15, 30):
-        obstacles.add((30, i))
-    for i in range(16):
-        obstacles.add((40, i))
-    env.update(obstacles)
+    goal = (40, 25)
+    env = Mountain()
 
     # creat planner
     planner = search_factory("a_star", start=start, goal=goal, env=env)

@@ -10,6 +10,10 @@ from turtle import distance
 from scipy.spatial import cKDTree
 import numpy as np
 
+from matplotlib import cbook, cm
+from matplotlib.colors import LightSource
+
+
 from .node import Node, Node3D
 
 
@@ -69,6 +73,57 @@ class Env3D(ABC):
     @abstractmethod
     def init(self) -> None:
         pass
+
+
+class Mountain():
+    def __init__(self):
+        self.motions = [(-1, 0, 1), (-1, 1, sqrt(2)), (0, 1, 1), (1, 1, sqrt(2)),
+                        (1, 0, 1), (1, -1, sqrt(2)), (0, -1, 1), (-1, -1, sqrt(2))]
+
+        # Load terrain data
+        dem = cbook.get_sample_data('jacksboro_fault_dem.npz')
+        z = dem['elevation']
+        nrows, ncols = z.shape
+        x = np.linspace(dem['xmin'], dem['xmax'], ncols)
+        y = np.linspace(dem['ymin'], dem['ymax'], nrows)
+        x, y = np.meshgrid(x, y)
+        region = np.s_[5:50, 5:50]
+
+        # Store both coordinate systems
+        self.x_coords = x[region]  # Actual coordinates for plotting
+        self.y_coords = y[region]  # Actual coordinates for plotting
+        self.z = z[region]         # Elevation data
+
+        # Grid dimensions for pathfinding (indices)
+        self.rows, self.cols = self.z.shape
+
+    def getNeighbor(self, node):
+        """Generate neighbor nodes with terrain-adjusted costs"""
+        neighbors = []
+        for dx, dy, base_cost in self.motions:
+            # Work with integer indices
+            new_x = int(node.x + dx)
+            new_y = int(node.y + dy)
+
+            # Check bounds using array dimensions
+            if 0 <= new_x < self.cols and 0 <= new_y < self.rows:
+                # Get elevation at new position
+                new_z = self.z[new_y, new_x]
+                current_z = self.z[int(node.y), int(node.x)]
+
+                # Add elevation change penalty
+                elevation_diff = abs(new_z - current_z)
+                terrain_cost = base_cost + elevation_diff * 0.1
+
+                neighbor = Node((new_x, new_y), node.current,
+                              node.g + terrain_cost, 0)
+                neighbors.append(neighbor)
+
+        return neighbors
+
+    def index_to_coords(self, i, j):
+        """Convert array indices to actual coordinates"""
+        return self.x_coords[j, i], self.y_coords[j, i], self.z[j, i]
 
 
 class Grid(Env):

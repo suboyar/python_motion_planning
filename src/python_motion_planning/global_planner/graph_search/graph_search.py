@@ -25,7 +25,7 @@ class GraphSearcher(Planner):
         # allowed motions
         self.motions = self.env.motions
         # obstacles
-        self.obstacles = self.env.obstacles
+        # self.obstacles = self.env.obstacles
 
     def h(self, node: Node, goal: Node) -> float:
         """

@@ -7,7 +7,10 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-from ..environment.env import Env, Grid, Map, Node
+from matplotlib import cbook, cm
+from matplotlib.colors import LightSource
+
+from ..environment.env import Env, Grid, Map, Node, Mountain
 
 
 class Plot:
@@ -16,12 +19,16 @@ class Plot:
         self.goal = Node(goal, goal, 0, 0)
         self.env = env
         self.fig = plt.figure("planning")
-        self.ax = self.fig.add_subplot()
+        if isinstance(self.env, Mountain):
+            self.ax = self.fig.subplots(subplot_kw=dict(projection='3d'))
+        else:
+            self.ax = self.fig.add_subplot()
 
     def animation(self, path: list, name: str, cost: float = None, expand: list = None, history_pose: list = None,
                   predict_path: list = None, lookahead_pts: list = None, cost_curve: list = None,
                   ellipse: np.ndarray = None) -> None:
         name = name + "\ncost: " + str(cost) if cost else name
+
         self.plotEnv(name)
         if expand is not None:
             self.plotExpand(expand)
@@ -47,43 +54,71 @@ class Plot:
         ----------
         name: Algorithm name or some other information
         '''
-        plt.plot(self.start.x, self.start.y, marker="s", color="#ff0000")
-        plt.plot(self.goal.x, self.goal.y, marker="s", color="#1155cc")
 
-        if isinstance(self.env, Grid):
-            obs_x = [x[0] for x in self.env.obstacles]
-            obs_y = [x[1] for x in self.env.obstacles]
-            plt.plot(obs_x, obs_y, "sk")
 
-        if isinstance(self.env, Map):
-            ax = self.fig.add_subplot()
-            # boundary
-            for (ox, oy, w, h) in self.env.boundary:
-                ax.add_patch(patches.Rectangle(
-                        (ox, oy), w, h,
-                        edgecolor='black',
-                        facecolor='black',
-                        fill=True
+        if isinstance(self.env, Mountain):
+            dem = cbook.get_sample_data('jacksboro_fault_dem.npz')
+            z = dem['elevation']
+            nrows, ncols = z.shape
+            x = np.linspace(dem['xmin'], dem['xmax'], ncols)
+            y = np.linspace(dem['ymin'], dem['ymax'], nrows)
+            x, y = np.meshgrid(x, y)
+
+            region = np.s_[5:50, 5:50]
+            x, y, z = x[region], y[region], z[region]
+
+            # Set up plot
+            ls = LightSource(270, 45)
+            # To use a custom hillshading mode, override the built-in shading and pass
+            # in the rgb colors of the shaded surface calculated from "shade".
+            rgb = ls.shade(z, cmap=cm.gist_earth, vert_exag=0.1, blend_mode='soft')
+            surf = self.ax.plot_surface(x, y, z, rstride=1, cstride=1, facecolors=rgb,
+                               linewidth=0, antialiased=False, shade=False)
+
+            start_coords = self.env.index_to_coords(int(self.start.x), int(self.start.y))
+            goal_coords = self.env.index_to_coords(int(self.goal.x), int(self.goal.y))
+
+            self.ax.plot3D(*start_coords, 'rs', markersize=7, markeredgecolor='black', markeredgewidth=2, zorder=100)
+            self.ax.plot3D(*goal_coords, 'bs', markersize=7, markeredgecolor='black', markeredgewidth=2, zorder=100)
+
+        else:
+            plt.plot(self.start.x, self.start.y, marker="s", color="#ff0000")
+            plt.plot(self.goal.x, self.goal.y, marker="s", color="#1155cc")
+
+            if isinstance(self.env, Grid):
+                obs_x = [x[0] for x in self.env.obstacles]
+                obs_y = [x[1] for x in self.env.obstacles]
+                plt.plot(obs_x, obs_y, "sk")
+
+            if isinstance(self.env, Map):
+                ax = self.fig.add_subplot()
+                # boundary
+                for (ox, oy, w, h) in self.env.boundary:
+                    ax.add_patch(patches.Rectangle(
+                            (ox, oy), w, h,
+                            edgecolor='black',
+                            facecolor='black',
+                            fill=True
+                        )
                     )
-                )
-            # rectangle obstacles
-            for (ox, oy, w, h) in self.env.obs_rect:
-                ax.add_patch(patches.Rectangle(
-                        (ox, oy), w, h,
-                        edgecolor='black',
-                        facecolor='gray',
-                        fill=True
+                # rectangle obstacles
+                for (ox, oy, w, h) in self.env.obs_rect:
+                    ax.add_patch(patches.Rectangle(
+                            (ox, oy), w, h,
+                            edgecolor='black',
+                            facecolor='gray',
+                            fill=True
+                        )
                     )
-                )
-            # circle obstacles
-            for (ox, oy, r) in self.env.obs_circ:
-                ax.add_patch(patches.Circle(
-                        (ox, oy), r,
-                        edgecolor='black',
-                        facecolor='gray',
-                        fill=True
+                # circle obstacles
+                for (ox, oy, r) in self.env.obs_circ:
+                    ax.add_patch(patches.Circle(
+                            (ox, oy), r,
+                            edgecolor='black',
+                            facecolor='gray',
+                            fill=True
+                        )
                     )
-                )
 
         plt.title(name)
         plt.axis("equal")
@@ -135,11 +170,26 @@ class Plot:
         ----------
         path: Path found in global planning
         '''
-        path_x = [path[i][0] for i in range(len(path))]
-        path_y = [path[i][1] for i in range(len(path))]
-        plt.plot(path_x, path_y, path_style, linewidth='2', color=path_color)
-        plt.plot(self.start.x, self.start.y, marker="s", color="#ff0000")
-        plt.plot(self.goal.x, self.goal.y, marker="s", color="#1155cc")
+        if isinstance(self.env, Mountain):
+            # 3D path plotting for mountain environment
+            elevation_range = np.max(self.env.z) - np.min(self.env.z)
+            height_offset = elevation_range * 0.1  # Elevate path above terrain
+
+            path_x, path_y, path_z = [], [], []
+            for point in path:
+                x_coord, y_coord, z_coord = self.env.index_to_coords(point[0], point[1])
+                path_x.append(x_coord)
+                path_y.append(y_coord)
+                path_z.append(z_coord)  # Add height offset
+
+            # Use plot3D instead of plot
+            self.ax.plot3D(path_x, path_y, path_z, path_style, linewidth=4, color=path_color, zorder=100)
+        else:
+            path_x = [path[i][0] for i in range(len(path))]
+            path_y = [path[i][1] for i in range(len(path))]
+            plt.plot(path_x, path_y, path_style, linewidth='2', color=path_color)
+            plt.plot(self.start.x, self.start.y, marker="s", color="#ff0000")
+            plt.plot(self.goal.x, self.goal.y, marker="s", color="#1155cc")
 
     def plotAgent(self, pose: tuple, radius: float=1) -> None:
         '''

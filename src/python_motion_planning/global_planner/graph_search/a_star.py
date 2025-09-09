@@ -7,7 +7,7 @@
 import heapq
 
 from .graph_search import GraphSearcher, GraphSearcher3D
-from python_motion_planning.utils import Env, Grid, Node, Env3D, Grid3D, Node3D
+from python_motion_planning.utils import Env, Grid, Node, Env3D, Grid3D, Node3D, Mountain
 
 
 class AStar(GraphSearcher):
@@ -30,7 +30,7 @@ class AStar(GraphSearcher):
     References:
         [1] A Formal Basis for the heuristic Determination of Minimum Cost Paths
     """
-    def __init__(self, start: tuple, goal: tuple, env: Grid, heuristic_type: str = "euclidean") -> None:
+    def __init__(self, start: tuple, goal: tuple, env: Mountain, heuristic_type: str = "euclidean") -> None:
         super().__init__(start, goal, env, heuristic_type)
 
     def __str__(self) -> str:
@@ -63,7 +63,7 @@ class AStar(GraphSearcher):
                 cost, path = self.extractPath(CLOSED)
                 return cost, path, list(CLOSED.values())
 
-            for node_n in self.getNeighbor(node):                
+            for node_n in self.env.getNeighbor(node):
                 # exists in CLOSED list
                 if node_n.current in CLOSED:
                     continue
