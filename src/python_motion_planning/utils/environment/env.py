@@ -78,6 +78,7 @@ class Env3D(ABC):
 class Mountain(Env):
     def __init__(self):
         # Load terrain data
+
         with cbook.get_sample_data('jacksboro_fault_dem.npz') as dem:
             z = dem['elevation']
             nrows, ncols = z.shape
@@ -101,6 +102,7 @@ class Mountain(Env):
             # Initialize parent class with grid dimensions
             super().__init__(self.cols, self.rows)
 
+        self.elveation_weight = 0.1
         self.obstacles = []
         self.motions = [Node((-1, 0), None, 1, 0.0), Node((-1, 1),  None, sqrt(2), 0.0),
                         Node((0, 1),  None, 1, 0.0), Node((1, 1),   None, sqrt(2), 0.0),
@@ -126,7 +128,7 @@ class Mountain(Env):
 
                 # Add elevation change penalty
                 elevation_diff = abs(new_z - current_z)
-                terrain_cost = motion.g + elevation_diff * 0.1
+                terrain_cost = motion.g + elevation_diff * self.elveation_weight
 
                 neighbor = Node((new_x, new_y), node.current, node.g + terrain_cost, 0)
                 neighbors.append(neighbor)

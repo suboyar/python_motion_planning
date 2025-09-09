@@ -96,7 +96,7 @@ class LPAStar(GraphSearcher):
         cost, path, _ = self.plan()
         
         # animation
-        self.plot.connect('button_press_event', self.OnPress)
+        # self.plot.connect('button_press_event', self.OnPress)
         self.plot.animation(path, str(self), cost=cost)
 
     def OnPress(self, event):
@@ -203,15 +203,15 @@ class LPAStar(GraphSearcher):
         if isinstance(self.env, Mountain):
             # Use Mountain's terrain-aware neighbor finding
             neighbors = []
-            for dx, dy, base_cost in self.env.motions:
-                new_x = int(node.x + dx)
-                new_y = int(node.y + dy)
+            for m in self.env.motions:
+                new_x = int(node.x + m.x)
+                new_y = int(node.y + m.y)
 
                 if 0 <= new_x < self.env.cols and 0 <= new_y < self.env.rows:
                     new_z = self.env.z[new_y, new_x]
                     current_z = self.env.z[int(node.y), int(node.x)]
                     elevation_diff = abs(new_z - current_z)
-                    terrain_cost = base_cost + elevation_diff * 0.1
+                    terrain_cost = m.g + elevation_diff * self.env.elveation_weight
 
                     # Convert to LNode
                     neighbor_pos = (new_x, new_y)

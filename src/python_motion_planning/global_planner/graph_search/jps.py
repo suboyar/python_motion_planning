@@ -64,6 +64,9 @@ class JPS(AStar):
 
             jp_list = []
             for motion in self.motions:
+                print(type(motion))
+                if isinstance(motion, tuple):
+                    motion = Node(current=(motion[0], motion[1]), g=motion[2])
                 jp = self.jump(node, motion)
                 # exists and not in CLOSED list
                 if jp and jp.current not in CLOSED:
@@ -82,7 +85,7 @@ class JPS(AStar):
             CLOSED[node.current] = node
         return [], [], []
 
-    def jump(self, node: Node, motion: Node):
+    def jump(self, node: Node, motion: tuple):
         """
         Jumping search recursively.
 
@@ -94,6 +97,8 @@ class JPS(AStar):
             jump_point (Node): jump point or None if searching fails
         """
         # explore a new node
+        # motion = Node(current=(_motion[0],_motion[1]), g=_motion[2])
+        print(type(motion))
         new_node = node + motion
         new_node.parent = node.current
         new_node.h = self.h(new_node, self.goal)

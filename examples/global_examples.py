@@ -10,27 +10,29 @@ from python_motion_planning.utils import Grid, Map, SearchFactory, Grid3D, Mount
 
 def graph_search():
     # build environment
+    # TODO: 15-20 situasjon
+    # TODO: justere på Mountain.elveation_weight i ulike grad (10%, 25%, 50% f.eks)
+    # TODO: Statestikk
     start = (5, 5)
     goal = (40, 25)
     env = Mountain()
 
-    # creat planner
+    # Funker
     planner = search_factory("a_star", start=start, goal=goal, env=env)
-    planner.run()
-    planner = search_factory("dijkstra", start=start, goal=goal, env=env)
-    planner.run()
+    # planner = search_factory("dijkstra", start=start, goal=goal, env=env)
     # planner = search_factory("d_star_lite", start=start, goal=goal, env=env)
-    # planner = search_factory("gbfs", start=start, goal=goal, env=env) # <= has no attribute 'getNeighbor'
+    # planner = search_factory("lpa_star", start=start, goal=goal, env=env)
+    # planner = search_factory("gbfs", start=start, goal=goal, env=env)
+
+    # Funker ikke
     # planner = search_factory("theta_star", start=start, goal=goal, env=env) # Needs obstacles
     # planner = search_factory("lazy_theta_star", start=start, goal=goal, env=env) # Needs obstacles
     # planner = search_factory("s_theta_star", start=start, goal=goal, env=env) # Needs obstacles
     # planner = search_factory("jps", start=start, goal=goal, env=env)          # Needs obstacles
     # planner = search_factory("d_star", start=start, goal=goal, env=env)
-    # planner = search_factory("lpa_star", start=start, goal=goal, env=env)
     # planner = search_factory("voronoi", start=start, goal=goal, env=env, n_knn=4, max_edge_len=10.0, inflation_r=1.0) # Needs obstacles
 
-    # animation
-    # planner.run()
+    planner.run()
 
 def sample_search():
     # build environment
