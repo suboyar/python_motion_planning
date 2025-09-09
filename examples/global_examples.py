@@ -16,19 +16,21 @@ def graph_search():
 
     # creat planner
     planner = search_factory("a_star", start=start, goal=goal, env=env)
-    # planner = search_factory("dijkstra", start=start, goal=goal, env=env)
+    planner.run()
+    planner = search_factory("dijkstra", start=start, goal=goal, env=env)
+    planner.run()
     # planner = search_factory("d_star_lite", start=start, goal=goal, env=env)
-    # planner = search_factory("gbfs", start=start, goal=goal, env=env)
-    # planner = search_factory("theta_star", start=start, goal=goal, env=env)
-    # planner = search_factory("lazy_theta_star", start=start, goal=goal, env=env)
-    # planner = search_factory("s_theta_star", start=start, goal=goal, env=env)
-    # planner = search_factory("jps", start=start, goal=goal, env=env)
+    # planner = search_factory("gbfs", start=start, goal=goal, env=env) # <= has no attribute 'getNeighbor'
+    # planner = search_factory("theta_star", start=start, goal=goal, env=env) # Needs obstacles
+    # planner = search_factory("lazy_theta_star", start=start, goal=goal, env=env) # Needs obstacles
+    # planner = search_factory("s_theta_star", start=start, goal=goal, env=env) # Needs obstacles
+    # planner = search_factory("jps", start=start, goal=goal, env=env)          # Needs obstacles
     # planner = search_factory("d_star", start=start, goal=goal, env=env)
     # planner = search_factory("lpa_star", start=start, goal=goal, env=env)
-    # planner = search_factory("voronoi", start=start, goal=goal, env=env, n_knn=4, max_edge_len=10.0, inflation_r=1.0)
+    # planner = search_factory("voronoi", start=start, goal=goal, env=env, n_knn=4, max_edge_len=10.0, inflation_r=1.0) # Needs obstacles
 
     # animation
-    planner.run()
+    # planner.run()
 
 def sample_search():
     # build environment

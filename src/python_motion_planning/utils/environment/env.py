@@ -86,6 +86,10 @@ class Mountain(Env):
             x, y = np.meshgrid(x, y)
             region = np.s_[5:50, 5:50]
 
+            # Conversion factors
+            self.dx_meters = 111200 * dem['dx'] * np.cos(np.radians(dem['ymin']))
+            self.dy_meters = 111200 * dem['dy']
+
             # Store both coordinate systems
             self.x_coords = x[region]  # Actual coordinates for plotting
             self.y_coords = y[region]  # Actual coordinates for plotting
@@ -131,6 +135,34 @@ class Mountain(Env):
 
     def index_to_coords(self, i, j):
         return self.x_coords[j, i], self.y_coords[j, i], self.z[j, i]
+
+    def path_distance_meters(self, path):
+        if len(path) < 2:
+            return 0.0
+
+        total_distance = 0.0
+        for i in range(len(path) - 1):
+            curr = path[i]
+            next_pt = path[i + 1]
+
+            # Grid movement
+            dx = next_pt[0] - curr[0]
+            dy = next_pt[1] - curr[1]
+
+            # Convert to meters
+            dx_m = dx * self.dx_meters
+            dy_m = dy * self.dy_meters
+
+            # Include elevation change
+            z_curr = self.z[curr[1], curr[0]]
+            z_next = self.z[next_pt[1], next_pt[0]]
+            dz = z_next - z_curr
+
+            # 3D distance
+            distance = sqrt(dx_m**2 + dy_m**2 + dz**2)
+            total_distance += distance
+
+        return total_distance
 
 class Grid(Env):
     """
