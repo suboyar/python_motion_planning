@@ -78,6 +78,10 @@ class Plot:
             start_coords = self.env.index_to_coords(int(self.start.x), int(self.start.y))
             goal_coords = self.env.index_to_coords(int(self.goal.x), int(self.goal.y))
 
+            self.ax.set_xlabel("Longitude (°)")
+            self.ax.set_ylabel("Latitude (°)")
+            self.ax.set_zlabel("Elevation (m)")
+
             self.ax.plot3D(*start_coords, 'rs', markersize=7, markeredgecolor='black', markeredgewidth=2, zorder=100)
             self.ax.plot3D(*goal_coords, 'bs', markersize=7, markeredgecolor='black', markeredgewidth=2, zorder=100)
 
