@@ -123,7 +123,11 @@ class InformedRRT(RRTStar):
         fx = self.transform(self.c_best / 2) @ np.array([x, y, z])
         fx[0, :] += x
         fx[1, :] += y
-        self.plot.animation(path, str(self), cost, expand, ellipse=fx)
+
+        print(f"{self} {path=}")
+        print(f"{self} distance (meter): {self.env.path_distance_meters(path)}")
+
+        self.plot.animation(self.interpolate_continuous_path(path), str(self), cost, expand)
 
     def generateRandomNode(self) -> Node:
         """

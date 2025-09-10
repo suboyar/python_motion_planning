@@ -104,6 +104,14 @@ class Mountain(Env):
 
         self.elveation_weight = 0.1
         self.obstacles = []
+        self.obs_rect = []
+        self.obs_circ = []
+        self.boundary = [
+            [-1, -1, 1, self.rows + 2],      # Left boundary
+            [-1, -1, self.cols + 2, 1],      # Bottom boundary
+            [self.cols, -1, 1, self.rows + 2], # Right boundary
+            [-1, self.rows, self.cols + 2, 1]  # Top boundary
+        ]
         self.motions = [Node((-1, 0), None, 1, 0.0), Node((-1, 1),  None, sqrt(2), 0.0),
                         Node((0, 1),  None, 1, 0.0), Node((1, 1),   None, sqrt(2), 0.0),
                         Node((1, 0),  None, 1, 0.0), Node((1, -1),  None, sqrt(2), 0.0),
@@ -147,7 +155,7 @@ class Mountain(Env):
             curr = path[i]
             next_pt = path[i + 1]
 
-            # Grid movement
+            # Grid movement (keep continuous coordinates)
             dx = next_pt[0] - curr[0]
             dy = next_pt[1] - curr[1]
 
@@ -155,9 +163,9 @@ class Mountain(Env):
             dx_m = dx * self.dx_meters
             dy_m = dy * self.dy_meters
 
-            # Include elevation change
-            z_curr = self.z[curr[1], curr[0]]
-            z_next = self.z[next_pt[1], next_pt[0]]
+            # Interpolate elevation at continuous coordinates
+            z_curr = self.interpolate_elevation(curr[1], curr[0])
+            z_next = self.interpolate_elevation(next_pt[1], next_pt[0])
             dz = z_next - z_curr
 
             # 3D distance
@@ -165,6 +173,28 @@ class Mountain(Env):
             total_distance += distance
 
         return total_distance
+
+    def interpolate_elevation(self, row, col):
+        """Bilinear interpolation for elevation at continuous coordinates"""
+        from scipy.interpolate import RectBivariateSpline
+
+        # If you don't want scipy dependency, use simple bilinear interpolation:
+        r_floor, c_floor = int(row), int(col)
+        r_ceil, c_ceil = min(r_floor + 1, self.rows - 1), min(c_floor + 1, self.cols - 1)
+
+        # Clamp to bounds
+        r_floor = max(0, min(r_floor, self.rows - 1))
+        c_floor = max(0, min(c_floor, self.cols - 1))
+
+        # Interpolation weights
+        dr = row - r_floor
+        dc = col - c_floor
+
+        # Bilinear interpolation
+        z1 = self.z[r_floor, c_floor] * (1 - dr) + self.z[r_ceil, c_floor] * dr
+        z2 = self.z[r_floor, c_ceil] * (1 - dr) + self.z[r_ceil, c_ceil] * dr
+
+        return z1 * (1 - dc) + z2 * dc
 
 class Grid(Env):
     """

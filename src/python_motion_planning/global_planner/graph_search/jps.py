@@ -64,9 +64,6 @@ class JPS(AStar):
 
             jp_list = []
             for motion in self.motions:
-                print(type(motion))
-                if isinstance(motion, tuple):
-                    motion = Node(current=(motion[0], motion[1]), g=motion[2])
                 jp = self.jump(node, motion)
                 # exists and not in CLOSED list
                 if jp and jp.current not in CLOSED:
@@ -98,10 +95,15 @@ class JPS(AStar):
         """
         # explore a new node
         # motion = Node(current=(_motion[0],_motion[1]), g=_motion[2])
-        print(type(motion))
         new_node = node + motion
         new_node.parent = node.current
         new_node.h = self.h(new_node, self.goal)
+
+        # Check bounds
+        x, y = new_node.current
+        if not (0 <= x < self.env.cols and 0 <= y < self.env.rows):
+            return None
+
 
         # hit the obstacle
         if new_node.current in self.obstacles:
@@ -168,3 +170,14 @@ class JPS(AStar):
         
         return False
 
+    def run(self):
+        """
+        Running both planning and animation.
+        """
+        cost, jump_points, expand = self.plan()
+        print(f"{self} distance (meter in jump points): {self.env.path_distance_meters(jump_points)}")
+        print(jump_points)
+        path = self.interpolate_path(jump_points)
+        print(path)
+        print(f"{self} distance (meter): {self.env.path_distance_meters(path)}")
+        self.plot.animation(path, str(self), cost, expand)

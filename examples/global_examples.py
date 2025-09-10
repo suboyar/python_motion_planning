@@ -17,18 +17,22 @@ def graph_search():
     goal = (40, 25)
     env = Mountain()
 
-    # Funker
+    # Works
     planner = search_factory("a_star", start=start, goal=goal, env=env)
-    # planner = search_factory("dijkstra", start=start, goal=goal, env=env)
-    # planner = search_factory("d_star_lite", start=start, goal=goal, env=env)
-    # planner = search_factory("lpa_star", start=start, goal=goal, env=env)
-    # planner = search_factory("gbfs", start=start, goal=goal, env=env)
+    planner = search_factory("dijkstra", start=start, goal=goal, env=env)
+    planner = search_factory("d_star_lite", start=start, goal=goal, env=env)
+    planner = search_factory("lpa_star", start=start, goal=goal, env=env)
+    planner = search_factory("gbfs", start=start, goal=goal, env=env)
+    planner = search_factory("jps", start=start, goal=goal, env=env)
+    planner = search_factory("theta_star", start=start, goal=goal, env=env)
+    planner = search_factory("rrt_star", start=start, goal=goal, env=env)
+    planner = search_factory("lazy_theta_star", start=start, goal=goal, env=env)
+    planner = search_factory("s_theta_star", start=start, goal=goal, env=env)
+    planner = search_factory("informed_rrt", start=start, goal=goal, env=env)
+    planner = search_factory("rrt", start=start, goal=goal, env=env)
+    planner = search_factory("rrt_connect", start=start, goal=goal, env=env)
 
-    # Funker ikke
-    # planner = search_factory("theta_star", start=start, goal=goal, env=env) # Needs obstacles
-    # planner = search_factory("lazy_theta_star", start=start, goal=goal, env=env) # Needs obstacles
-    # planner = search_factory("s_theta_star", start=start, goal=goal, env=env) # Needs obstacles
-    # planner = search_factory("jps", start=start, goal=goal, env=env)          # Needs obstacles
+    # Doesn't work
     # planner = search_factory("d_star", start=start, goal=goal, env=env)
     # planner = search_factory("voronoi", start=start, goal=goal, env=env, n_knn=4, max_edge_len=10.0, inflation_r=1.0) # Needs obstacles
 

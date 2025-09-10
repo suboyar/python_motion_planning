@@ -87,6 +87,8 @@ class RRT(SampleSearcher):
         Running both plannig and animation.
         """
         cost, path, expand = self.plan()
+        print(f"{self} {path=}")
+        print(f"{self} distance (meter): {self.env.path_distance_meters(path)}")
         self.plot.animation(path, str(self), cost, expand)
 
     def generateRandomNode(self) -> Node:

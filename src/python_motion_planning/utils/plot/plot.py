@@ -181,7 +181,7 @@ class Plot:
 
             path_x, path_y, path_z = [], [], []
             for point in path:
-                x_coord, y_coord, z_coord = self.env.index_to_coords(point[0], point[1])
+                x_coord, y_coord, z_coord = self.env.index_to_coords(int(point[0]), int(point[1]))
                 path_x.append(x_coord)
                 path_y.append(y_coord)
                 path_z.append(z_coord)  # Add height offset

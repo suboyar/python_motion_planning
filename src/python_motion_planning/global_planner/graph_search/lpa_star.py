@@ -94,9 +94,9 @@ class LPAStar(GraphSearcher):
         """
         # static planning
         cost, path, _ = self.plan()
-        
-        # animation
-        # self.plot.connect('button_press_event', self.OnPress)
+        cost, path, expand = self.plan()
+        print(f"{self} {path=}")
+        print(f"{self} distance (meter): {self.env.path_distance_meters(path)}")
         self.plot.animation(path, str(self), cost=cost)
 
     def OnPress(self, event):

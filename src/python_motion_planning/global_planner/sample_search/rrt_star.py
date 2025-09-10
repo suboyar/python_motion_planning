@@ -73,5 +73,13 @@ class RRTStar(RRT):
                     continue
             return node_new
         else:
-            return None 
-        
+            return None
+
+    def run(self) -> None:
+        """
+        Running both plannig and animation.
+        """
+        cost, path, expand = self.plan()
+        print(f"{self} {path=}")
+        print(f"{self} distance (meter): {self.env.path_distance_meters(path)}")
+        self.plot.animation(self.interpolate_continuous_path(path), str(self), cost, expand)
