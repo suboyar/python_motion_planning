@@ -6,7 +6,7 @@
 """
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from python_motion_planning.utils import Grid, Map, SearchFactory, Grid3D, Mountain
+from python_motion_planning.utils.environment.env import Grid, Map, SearchFactory, Grid3D, Mountain
 
 def graph_search():
     # build environment

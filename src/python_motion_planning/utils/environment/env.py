@@ -76,7 +76,7 @@ class Env3D(ABC):
 
 
 class Mountain(Env):
-    def __init__(self):
+    def __init__(self, elevation_weight: float = 0.1, elevation_scale: float = 1.0):
         # Load terrain data
 
         with cbook.get_sample_data('jacksboro_fault_dem.npz') as dem:
@@ -102,7 +102,13 @@ class Mountain(Env):
             # Initialize parent class with grid dimensions
             super().__init__(self.cols, self.rows)
 
-        self.elveation_weight = 0.1
+        # Optionally scale raw elevation values (useful for testing stronger mountains)
+        if elevation_scale != 1.0:
+            self.z = self.z * elevation_scale
+
+        # Weight that controls how strongly elevation affects traversal cost
+        # Note: attribute name kept as `elveation_weight` for backward compatibility with existing code
+        self.elveation_weight = elevation_weight
         self.obstacles = []
         self.obs_rect = []
         self.obs_circ = []
@@ -120,6 +126,16 @@ class Mountain(Env):
     def init(self):
         pass
 
+    def amplify_elevation(self, factor: float) -> None:
+        """Multiply the stored elevation (DEM) by `factor`.
+
+        This is a convenience for testing: increasing the elevation values
+        will increase the uphill penalty computed in `getNeighbor`.
+        """
+        if factor <= 0:
+            raise ValueError("amplify factor must be > 0")
+        self.z = self.z * factor
+
     def getNeighbor(self, node):
         """Generate neighbor nodes with terrain-adjusted costs"""
         neighbors = []
@@ -130,13 +146,29 @@ class Mountain(Env):
 
             # Check bounds using array dimensions
             if 0 <= new_x < self.cols and 0 <= new_y < self.rows:
-                # Get elevation at new position
+                # Get elevation at new position (z is in same units as stored DEM, typically meters)
                 new_z = self.z[new_y, new_x]
                 current_z = self.z[int(node.y), int(node.x)]
 
-                # Add elevation change penalty
-                elevation_diff = abs(new_z - current_z)
-                terrain_cost = motion.g + elevation_diff * self.elveation_weight
+                # Convert horizontal motion to meters using grid spacing stored on the env
+                dx_m = motion.x * self.dx_meters
+                dy_m = motion.y * self.dy_meters
+                horizontal_m = sqrt(dx_m**2 + dy_m**2)
+
+                # Elevation change in meters
+                dz_m = new_z - current_z
+
+                # Elevation penalty: penalize uphill movement more than downhill.
+                # This converts the vertical change to an equivalent horizontal-grid-unit cost
+                # so it stays consistent with other costs (motion.g uses grid units).
+                # You can tune the strength with `self.elveation_weight`.
+                elevation_penalty = 0.0
+                if horizontal_m > 1e-9:
+                    # uphill-only penalty (change to abs(dz_m) to penalize both directions)
+                    elevation_penalty = max(0.0, dz_m) / horizontal_m * self.elveation_weight
+
+                # Final terrain cost (in grid-cost units)
+                terrain_cost = motion.g + elevation_penalty
 
                 neighbor = Node((new_x, new_y), node.current, node.g + terrain_cost, 0)
                 neighbors.append(neighbor)
