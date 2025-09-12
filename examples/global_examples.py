@@ -6,7 +6,8 @@
 """
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from python_motion_planning.utils.environment.env import Grid, Map, SearchFactory, Grid3D, Mountain
+from python_motion_planning.utils.environment.env import Grid, Map, Grid3D, Mountain
+from python_motion_planning.utils.planner.search_factory import SearchFactory
 
 def graph_search():
     # build environment
@@ -37,6 +38,14 @@ def graph_search():
     # planner = search_factory("voronoi", start=start, goal=goal, env=env, n_knn=4, max_edge_len=10.0, inflation_r=1.0) # Needs obstacles
 
     planner.run()
+
+    # Example call in graph_search() before planner creation:
+    ok, reason = validate_point(env, start)
+    if not ok:
+        raise ValueError(f"Start {start} invalid for environment: {reason}")
+    ok, reason = validate_point(env, goal)
+    if not ok:
+        raise ValueError(f"Goal {goal} invalid for environment: {reason}")
 
 def sample_search():
     # build environment
@@ -96,3 +105,17 @@ if __name__ == '__main__':
     graph_search()
     # sample_search()
     # evolutionary_search():
+
+def validate_point(env, pt):
+    """Return (True, None) if pt is valid for env, otherwise (False, reason)."""
+    x, y = int(pt[0]), int(pt[1])
+    # Mountain uses cols/rows; other Env types use x_range/y_range
+    if hasattr(env, "cols") and hasattr(env, "rows"):
+        in_bounds = 0 <= x < env.cols and 0 <= y < env.rows
+    else:
+        in_bounds = 0 <= x < env.x_range and 0 <= y < env.y_range
+    if not in_bounds:
+        return False, "out_of_bounds"
+    if getattr(env, "obstacles", None) and (x, y) in env.obstacles:
+        return False, "blocked_by_obstacle"
+    return True, None
