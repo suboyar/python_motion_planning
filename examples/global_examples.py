@@ -5,6 +5,7 @@
 @update: 2024.11.22
 """
 import sys, os
+import random
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from python_motion_planning.utils.environment.env import Grid, Map, Grid3D, Mountain
 from python_motion_planning.utils.planner.search_factory import SearchFactory
@@ -46,6 +47,40 @@ def graph_search():
     ok, reason = validate_point(env, goal)
     if not ok:
         raise ValueError(f"Goal {goal} invalid for environment: {reason}")
+
+def graph_search_with_random_goals():
+     # build environment
+
+    start = (5, 5)
+    goal = (40, 25)
+    env = Mountain()
+    start = (5, 5)
+    env = Mountain()
+
+    # create 15-20 random valid goals
+    goals = generate_random_goals(env, n=20, start=start, seed=42)
+    print(f"Generated {len(goals)} goals")
+    for i, goal in enumerate(goals, 1):
+        x, y = int(goal[0]), int(goal[1])
+        # simple validation inline (avoid dependency on validate_point placement)
+        if hasattr(env, "cols") and hasattr(env, "rows"):
+            in_bounds = 0 <= x < env.cols and 0 <= y < env.rows
+        else:
+            in_bounds = 0 <= x < env.x_range and 0 <= y < env.y_range
+        if not in_bounds or (getattr(env, "obstacles", None) and (x, y) in env.obstacles):
+            print(f"Skipping invalid goal {goal}")
+            continue
+        print(f"Goal {i}: {goal}")
+        # plan with A* for each goal (replace with desired planner)
+        planner = search_factory("a_star", start=start, goal=goal, env=env)
+        cost, path, _ = planner.plan()
+        print(f"  A* cost={cost}, path_len={len(path)}")
+
+    # if you still want to run a single planner + animation, pick one goal:
+    # planner = search_factory("a_star", start=start, goal=goals[0], env=env)
+    # planner.run()
+    # Works
+    planner = search_factory("a_star", start=start, goal=goal, env=env)
 
 def sample_search():
     # build environment
@@ -119,3 +154,28 @@ def validate_point(env, pt):
     if getattr(env, "obstacles", None) and (x, y) in env.obstacles:
         return False, "blocked_by_obstacle"
     return True, None
+
+def generate_random_goals(env, n=20, start=None, seed=None):
+    """Return up to n random (x,y) goals inside env bounds and not in obstacles."""
+    if seed is not None:
+        random.seed(seed)
+    goals = []
+    tries = 0
+    max_tries = n * 10
+    while len(goals) < n and tries < max_tries:
+        tries += 1
+        if hasattr(env, "cols") and hasattr(env, "rows"):
+            x = random.randrange(0, env.cols)
+            y = random.randrange(0, env.rows)
+        else:
+            x = random.randrange(0, env.x_range)
+            y = random.randrange(0, env.y_range)
+        pt = (x, y)
+        if start and (int(start[0]) == x and int(start[1]) == y):
+            continue
+        if getattr(env, "obstacles", None) and pt in env.obstacles:
+            continue
+        if pt in goals:
+            continue
+        goals.append(pt)
+    return goals
