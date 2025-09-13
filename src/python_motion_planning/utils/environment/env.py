@@ -76,7 +76,7 @@ class Env3D(ABC):
 
 
 class Mountain(Env):
-    def __init__(self, elevation_weight: float = 0.1, elevation_scale: float = 1.0):
+    def __init__(self, *args, elevation_weight: float = 0.1, elevation_scale: float = 1.0):
         # Load terrain data
 
         with cbook.get_sample_data('jacksboro_fault_dem.npz') as dem:
@@ -102,13 +102,19 @@ class Mountain(Env):
             # Initialize parent class with grid dimensions
             super().__init__(self.cols, self.rows)
 
-        # Optionally scale raw elevation values (useful for testing stronger mountains)
-        if elevation_scale != 1.0:
-            self.z = self.z * elevation_scale
+        # ensure elevation array is floating type before any scaling/ops
+        try:
+            self.z = self.z.astype(float)
+        except Exception:
+            # if self.z doesn't exist yet this will surface; keep original behavior otherwise
+            pass
 
-        # Weight that controls how strongly elevation affects traversal cost
-        # Note: attribute name kept as `elveation_weight` for backward compatibility with existing code
-        self.elveation_weight = elevation_weight
+        # apply requested scale (amplify DEM)
+        if elevation_scale != 1.0:
+            self.z = self.z * float(elevation_scale)
+
+        # store weight (keep legacy misspelling for compatibility)
+        self.elveation_weight = float(elevation_weight)
         self.obstacles = []
         self.obs_rect = []
         self.obs_circ = []

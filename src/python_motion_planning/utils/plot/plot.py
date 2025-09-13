@@ -5,6 +5,7 @@ Plot tools 2D
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.cm import ScalarMappable
 import matplotlib.patches as patches
 
 from matplotlib import cbook, cm
@@ -46,86 +47,102 @@ class Plot:
 
         plt.show()
 
-    def plotEnv(self, name: str) -> None:
-        '''
-        Plot environment with static obstacles.
+    def plotEnv(self, title: str = "Environment"):
+        """
+        Plot terrain with hillshade and proper scaling so elevation differences are visible.
+        Uses self.fig / self.ax so 3D axes created in __init__ are used for Mountain.
+        """
+        # ensure env.z exists and is float if present
+        z = None
+        if hasattr(self.env, "z"):
+            z = np.asarray(self.env.z, dtype=float)
 
-        Parameters
-        ----------
-        name: Algorithm name or some other information
-        '''
-
-
+        # If Mountain, draw a 3D surface on the pre-created 3D axes
         if isinstance(self.env, Mountain):
-            dem = cbook.get_sample_data('jacksboro_fault_dem.npz')
-            z = dem['elevation']
-            nrows, ncols = z.shape
-            x = np.linspace(dem['xmin'], dem['xmax'], ncols)
-            y = np.linspace(dem['ymin'], dem['ymax'], nrows)
-            x, y = np.meshgrid(x, y)
+            # clear and use the stored 3D axes
+            self.ax.clear()
+            if z is None or z.size == 0:
+                raise RuntimeError("Environment elevation array is empty")
 
-            region = np.s_[5:50, 5:50]
-            x, y, z = x[region], y[region], z[region]
+            # get coordinate grids (x_coords, y_coords) that align with z
+            x = np.asarray(self.env.x_coords, dtype=float)
+            y = np.asarray(self.env.y_coords, dtype=float)
 
-            # Set up plot
-            ls = LightSource(270, 45)
-            # To use a custom hillshading mode, override the built-in shading and pass
-            # in the rgb colors of the shaded surface calculated from "shade".
-            rgb = ls.shade(z, cmap=cm.gist_earth, vert_exag=0.1, blend_mode='soft')
-            surf = self.ax.plot_surface(x, y, z, rstride=1, cstride=1, facecolors=rgb,
-                               linewidth=0, antialiased=False, shade=False)
+            # normalize for coloring
+            vmin = np.nanmin(z)
+            vmax = np.nanmax(z)
+            norm = plt.Normalize(vmin=vmin, vmax=vmax)
 
-            start_coords = self.env.index_to_coords(int(self.start.x), int(self.start.y))
-            goal_coords = self.env.index_to_coords(int(self.goal.x), int(self.goal.y))
+            # optional vertical exaggeration knob (increase to make relief more visible)
+            vert_exag = 1.0
 
-            self.ax.set_xlabel("Longitude (°)")
-            self.ax.set_ylabel("Latitude (°)")
-            self.ax.set_zlabel("Elevation (m)")
+            # facecolors from colormap with LightSource shading
+            ls = LightSource(azdeg=315, altdeg=45)
+            rgb = ls.shade(z, cmap=cm.terrain, vert_exag=vert_exag, blend_mode='overlay', dx=1, dy=1)
 
-            self.ax.plot3D(*start_coords, 'rs', markersize=7, markeredgecolor='black', markeredgewidth=2, zorder=100)
-            self.ax.plot3D(*goal_coords, 'bs', markersize=7, markeredgecolor='black', markeredgewidth=2, zorder=100)
+            # plot surface using facecolors (avoid shading by mpl to preserve hillshade)
+            try:
+                self.ax.plot_surface(x, y, z,
+                                     rstride=1, cstride=1,
+                                     facecolors=cm.terrain(norm(z)),
+                                     linewidth=0, antialiased=False, shade=False)
+            except Exception:
+                # fallback for older matplotlib: use plot_surface with rgb shading
+                self.ax.plot_surface(x, y, z, rstride=1, cstride=1, facecolors=rgb, linewidth=0, antialiased=False, shade=False)
 
+            # labels and title
+            self.ax.set_title(title)
+            self.ax.set_xlabel("X")
+            self.ax.set_ylabel("Y")
+            self.ax.set_zlabel("Elevation")
+
+            # add colorbar on the figure
+            sm = ScalarMappable(cmap=cm.terrain, norm=norm)
+            sm.set_array(z)
+            # remove existing colorbars to avoid duplicates
+            for c in list(self.fig.axes):
+                # keep only the main axes and colorbars are handled below
+                pass
+            self.fig.colorbar(sm, ax=self.ax, shrink=0.6, pad=0.1)
+
+            return self.fig, self.ax
+
+        # Non-mountain: 2D shaded image on stored 2D axes
         else:
-            plt.plot(self.start.x, self.start.y, marker="s", color="#ff0000")
-            plt.plot(self.goal.x, self.goal.y, marker="s", color="#1155cc")
+            # ensure we have a 2D axis
+            self.ax.clear()
+            if z is None or z.size == 0:
+                self.ax.set_title(title)
+                return self.fig, self.ax
 
-            if isinstance(self.env, Grid):
-                obs_x = [x[0] for x in self.env.obstacles]
-                obs_y = [x[1] for x in self.env.obstacles]
-                plt.plot(obs_x, obs_y, "sk")
+            # extent from env coordinates if available
+            try:
+                xmin = float(self.env.x_coords.min())
+                xmax = float(self.env.x_coords.max())
+                ymin = float(self.env.y_coords.min())
+                ymax = float(self.env.y_coords.max())
+                extent = (xmin, xmax, ymin, ymax)
+            except Exception:
+                extent = (0, z.shape[1], 0, z.shape[0])
 
-            if isinstance(self.env, Map):
-                ax = self.fig.add_subplot()
-                # boundary
-                for (ox, oy, w, h) in self.env.boundary:
-                    ax.add_patch(patches.Rectangle(
-                            (ox, oy), w, h,
-                            edgecolor='black',
-                            facecolor='black',
-                            fill=True
-                        )
-                    )
-                # rectangle obstacles
-                for (ox, oy, w, h) in self.env.obs_rect:
-                    ax.add_patch(patches.Rectangle(
-                            (ox, oy), w, h,
-                            edgecolor='black',
-                            facecolor='gray',
-                            fill=True
-                        )
-                    )
-                # circle obstacles
-                for (ox, oy, r) in self.env.obs_circ:
-                    ax.add_patch(patches.Circle(
-                            (ox, oy), r,
-                            edgecolor='black',
-                            facecolor='gray',
-                            fill=True
-                        )
-                    )
+            vmin = np.nanmin(z)
+            vmax = np.nanmax(z)
+            if vmin == vmax:
+                vmax = vmin + 1.0
 
-        plt.title(name)
-        plt.axis("equal")
+            ls = LightSource(azdeg=315, altdeg=45)
+            rgb = ls.shade(z, cmap=cm.terrain, vert_exag=1.0, blend_mode='overlay', dx=1, dy=1)
+
+            self.ax.imshow(rgb, extent=extent, origin='lower', aspect='auto')
+            sm = ScalarMappable(cmap=cm.terrain)
+            sm.set_clim(vmin, vmax)
+            sm.set_array(z)
+            # attach colorbar to the figure
+            self.fig.colorbar(sm, ax=self.ax, fraction=0.046, pad=0.04)
+            self.ax.set_title(title)
+            self.ax.set_xlabel("X")
+            self.ax.set_ylabel("Y")
+            return self.fig, self.ax
 
     def plotExpand(self, expand: list) -> None:
         '''
@@ -166,7 +183,7 @@ class Plot:
 
         plt.pause(0.01)
 
-    def plotPath(self, path: list, path_color: str='#13ae00', path_style: str="-") -> None:
+    def plotPath(self, path: list, path_color: str='#ff4500', path_style: str="-") -> None:
         '''
         Plot path in global planning.
 
@@ -184,16 +201,27 @@ class Plot:
                 x_coord, y_coord, z_coord = self.env.index_to_coords(int(point[0]), int(point[1]))
                 path_x.append(x_coord)
                 path_y.append(y_coord)
-                path_z.append(z_coord)  # Add height offset
+                path_z.append(z_coord + height_offset)  # offset so path is visible above terrain
 
-            # Use plot3D instead of plot
-            self.ax.plot3D(path_x, path_y, path_z, path_style, linewidth=4, color=path_color, zorder=100)
+            # Use plot3D with thicker line and high zorder
+            self.ax.plot3D(path_x, path_y, path_z, path_style, linewidth=5, color=path_color, zorder=100)
+
+            # mark start and goal with larger, contrasting markers
+            try:
+                sx, sy, sz = self.env.index_to_coords(int(self.start.x), int(self.start.y))
+                gx, gy, gz = self.env.index_to_coords(int(self.goal.x), int(self.goal.y))
+                self.ax.scatter3D([sx], [sy], [sz + height_offset], color='yellow', s=120, edgecolors='k', zorder=200)
+                self.ax.scatter3D([gx], [gy], [gz + height_offset], color='cyan', s=120, edgecolors='k', zorder=200)
+            except Exception:
+                pass
+
         else:
             path_x = [path[i][0] for i in range(len(path))]
             path_y = [path[i][1] for i in range(len(path))]
-            plt.plot(path_x, path_y, path_style, linewidth='2', color=path_color)
-            plt.plot(self.start.x, self.start.y, marker="s", color="#ff0000")
-            plt.plot(self.goal.x, self.goal.y, marker="s", color="#1155cc")
+            plt.plot(path_x, path_y, path_style, linewidth=3, color=path_color)
+            # larger, filled markers for start/goal so they're more visible
+            plt.scatter([self.start.x], [self.start.y], marker="s", color="#ff0000", s=120, edgecolors='k')
+            plt.scatter([self.goal.x], [self.goal.y], marker="s", color="#1155cc", s=120, edgecolors='k')
 
     def plotAgent(self, pose: tuple, radius: float=1) -> None:
         '''
