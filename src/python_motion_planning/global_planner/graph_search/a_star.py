@@ -121,9 +121,14 @@ class AStar(GraphSearcher):
         Running both planning and animation.
         """
         cost, path, expand = self.plan()
+        return cost
         print(f"{self} {path=}")
         print(f"{self} distance (meter): {self.env.path_distance_meters(path)}")
         self.plot.animation(path, str(self), cost, expand)
+
+    def plan_path(self):
+        cost, path, expand = self.plan()
+        return self.env.path_distance_meters(path)
 
 class AStar3D(GraphSearcher3D):
     """

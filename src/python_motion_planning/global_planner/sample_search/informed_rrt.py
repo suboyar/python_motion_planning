@@ -26,6 +26,9 @@ class Ellipse:
         theta = - np.arctan2(p2[1] - p1[1], p2[0] - p1[0])
 
         # transform
+        # print(f"{a=} {c=}")
+        if a < c:
+            a = c
         b = np.sqrt(a ** 2 - c ** 2)
         T = np.array([[ a * np.cos(theta), b * np.sin(theta), center_x],
                       [-a * np.sin(theta), b * np.cos(theta), center_y],

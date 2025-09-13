@@ -82,6 +82,13 @@ class RRT(SampleSearcher):
 
         return 0, None, list(sample_list.values())
 
+    def plan_path(self) -> None:
+        """
+        Running both plannig and animation.
+        """
+        cost, path, expand = self.plan()
+        return self.env.path_distance_meters(path)
+
     def run(self) -> None:
         """
         Running both plannig and animation.

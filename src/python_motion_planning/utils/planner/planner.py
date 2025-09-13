@@ -96,6 +96,10 @@ class Planner(ABC):
         '''
         pass
 
+    @abstractmethod
+    def plan_path(self):
+        pass
+
 
 class Planner3D(ABC):
     def __init__(self, start: tuple, goal: tuple, env: Env) -> None:

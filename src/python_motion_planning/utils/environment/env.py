@@ -76,7 +76,7 @@ class Env3D(ABC):
 
 
 class Mountain(Env):
-    def __init__(self):
+    def __init__(self, elevation_weight=0.1):
         # Load terrain data
 
         with cbook.get_sample_data('jacksboro_fault_dem.npz') as dem:
@@ -102,7 +102,7 @@ class Mountain(Env):
             # Initialize parent class with grid dimensions
             super().__init__(self.cols, self.rows)
 
-        self.elveation_weight = 0.1
+        self.elevation_weight = elevation_weight
         self.obstacles = []
         self.obs_rect = []
         self.obs_circ = []
@@ -136,7 +136,7 @@ class Mountain(Env):
 
                 # Add elevation change penalty
                 elevation_diff = abs(new_z - current_z)
-                terrain_cost = motion.g + elevation_diff * self.elveation_weight
+                terrain_cost = motion.g + elevation_diff * self.elevation_weight
 
                 neighbor = Node((new_x, new_y), node.current, node.g + terrain_cost, 0)
                 neighbors.append(neighbor)
@@ -145,6 +145,29 @@ class Mountain(Env):
 
     def index_to_coords(self, i, j):
         return self.x_coords[j, i], self.y_coords[j, i], self.z[j, i]
+
+    def coords_to_index(self, x_coord, y_coord):
+        """Convert real-world coordinates to array indices"""
+        # Assuming you have stored the original bounds
+        x_min, x_max = self.x_coords.min(), self.x_coords.max()
+        y_min, y_max = self.y_coords.min(), self.y_coords.max()
+
+        # Calculate normalized positions (0 to 1)
+        x_norm = (x_coord - x_min) / (x_max - x_min)
+        y_norm = (y_coord - y_min) / (y_max - y_min)
+
+        # Convert to indices
+        i = int(round(x_norm * (self.x_coords.shape[1] - 1)))
+        j = int(round(y_norm * (self.x_coords.shape[0] - 1)))
+
+        # Invert j to account for coordinate system flip
+        j = (self.x_coords.shape[0] - 1) - j
+
+        # Clamp to valid bounds
+        i = max(0, min(i, self.x_coords.shape[1] - 1))
+        j = max(0, min(j, self.x_coords.shape[0] - 1))
+
+        return i, j
 
     def path_distance_meters(self, path):
         if len(path) < 2:

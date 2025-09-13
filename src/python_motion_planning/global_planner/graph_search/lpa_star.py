@@ -99,6 +99,11 @@ class LPAStar(GraphSearcher):
         print(f"{self} distance (meter): {self.env.path_distance_meters(path)}")
         self.plot.animation(path, str(self), cost=cost)
 
+    def plan_path(self):
+        self.computeShortestPath()
+        cost, path = self.extractPath()
+        return self.env.path_distance_meters(path)
+
     def OnPress(self, event):
         """
         Mouse button callback function.
@@ -211,7 +216,7 @@ class LPAStar(GraphSearcher):
                     new_z = self.env.z[new_y, new_x]
                     current_z = self.env.z[int(node.y), int(node.x)]
                     elevation_diff = abs(new_z - current_z)
-                    terrain_cost = m.g + elevation_diff * self.env.elveation_weight
+                    terrain_cost = m.g + elevation_diff * self.env.elevation_weight
 
                     # Convert to LNode
                     neighbor_pos = (new_x, new_y)
