@@ -175,8 +175,6 @@ class ThetaStar(AStar):
         Running both planning and animation.
         """
         cost, jump_points, expand = self.plan()
-        print(f"{self} distance (meter in jump points): {self.env.path_distance_meters(jump_points)}")
-        print(jump_points)
         path = self.interpolate_path(jump_points)
         print(path)
         print(f"{self} distance (meter): {self.env.path_distance_meters(path)}")

@@ -136,10 +136,6 @@ def run_bench(start, goals):
 
 def graph_search():
     # build environment
-    # TODO: 15-20 situasjon
-    # TODO: justere på Mountain.elveation_weight i ulike grad (10%, 25%, 50% f.eks)
-    # TODO: Statestikk
-
     start = Node((6, 33))
     goals = [Node((21, 29)),
              Node((30, 10)),
